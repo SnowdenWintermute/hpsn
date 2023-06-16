@@ -1,8 +1,9 @@
-import { Snackbar, Alert, FormControl } from "@mui/material";
+import { Snackbar, Alert } from "@mui/material";
 import { useState, useEffect } from "react";
-import ReviewStudent from "./ReviewStudent";
+import  useFetchClasses from "../../hooks/useFetchClass";
+import ConfirmationModal from "./ReviewStudent";
 import { useQuery, QueryClient } from "@tanstack/react-query";
-import { getClasses } from "../../pages/api/axiosRoutes";
+import { createStudent, useCreateStudent } from "../../pages/api/useQHooks/createStudent";
 import axios from "axios";
 const initialFormState = {
   Admission_Date: new Date(),
@@ -17,66 +18,39 @@ const initialFormState = {
   Address: "",
   Phone_No: "",
 };
-// function Example() {
-//   const { isLoading, error, data, isFetching } = useQuery({
-//     queryKey: ["repoData"],
-//     queryFn: () =>
-//       axios
-//         .get("http://localhost:3100/students/a/getclasses")
-//         .then((res) => res.data),
-//   });
 
-//   if (isLoading) return "Loading...";
-
-//   if (error) return "An error has occurred: " + error.message;
-// }
 
 export default function StudentForm() {
   const [form, setForm] = useState(initialFormState);
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState("");
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
   const [classes, setClasses] = useState([]);
   const [selectedClass, setSelectedClass] = useState(null);
+  const [selectedClassIndex, setSelectedClassIndex] = useState(null);
   const [selectedSection, setSelectedSection] = useState("");
+  const [isConfirmationNeeded, setIsConfirmationNeeded] = useState(false);
 
-  const { isLoading, error, data, isFetching } = useQuery({
-    queryKey: ["classData"],
-    queryFn: () =>
-      axios
-        .get("http://localhost:3100/students/a/getclasses")
-        .then((res) => res.data),
-  });
+  const studentMutation = useCreateStudent();
+
+  // const { isLoading, error, data, isFetching } = useQuery({
+  //   queryKey: ["classData"],
+  //   queryFn: () =>
+  //     axios
+  //       .get("http://localhost:3100/students/a/getclasses")
+  //       .then((res) => res.data),
+  // });
+  const createStudentMutation = useCreateStudent(); // Initialize the mutation
+  const { isLoading, error, data} = useFetchClasses();
+
   useEffect(() => {
     if (!isLoading && !error) {
       setClasses(data);
     }
   }, [data, isLoading, error]);
-  const [selectedClassIndex, setSelectedClassIndex] = useState(null);
 
-  // const handleClassChange = (e) => {
-  //   const selectedClass = classes.find(
-  //     (classItem) => classItem._id === e.target.value
-  //   );
-  //   setSelectedClass(selectedClass);
-  //   setForm({
-  //     ...form,
-  //     ClassID: selectedClass?._id,
-  //     Section: '',
-  //   });
-  //    setSelectedSection(''); // Clear the selected section when class changes
-  // };
-  // const handleClassChange = (e) => {
-  //   const index = e.target.value;
-  //   setSelectedClassIndex(index);
-  //   const selectedClass = classes[index];
-  //   setForm({
-  //     ...form,
-  //     ClassID: selectedClass?._id,
-  //     Section: "",
-  //   });
-  //   setSelectedSection(""); // Clear the selected section when class changes
-  // };
+
   const handleClassChange = (e) => {
     const index = e.target.value;
     setSelectedClassIndex(index);
@@ -90,17 +64,9 @@ export default function StudentForm() {
     setSelectedSection(""); // This will clear the selected section state when a new class is selected
   };
 
-  useEffect(() => {
-    if (form) console.log(form);
-  }, [selectedClass, form]);
+  
 
-  // const handleSectionChange = (e) => {
-  //   setSelectedSection(e.target.value);
-  //   setForm({
-  //     ...form,
-  //     Section: e.target.value,
-  //   });
-  // };
+
   const handleSectionChange = (e) => {
     setSelectedSection(e.target.value);
     setForm({
@@ -113,18 +79,43 @@ export default function StudentForm() {
   if (error) return "An error has occurred: " + error.message;
 
   const handleSubmit = (e) => {
+    setIsConfirmationNeeded(true); // Set isConfirmationNeeded to true when form is submitted
+  
     e.preventDefault();
     setOpen(true);
-
+    setIsSubmitted(true); 
     console.log(form);
   };
 
+  const handleFinalSubmit = () => {
+    createStudentMutation.mutate(form, {
+      onSuccess: () => {
+      //  setForm(initialFormState); // Reset form state to initial state
+        setMessage("Student created successfully!");
+        setOpen(true);
+        setIsConfirmationNeeded(false); // Reset isConfirmationNeeded state
+      },
+      onError: (err) => {
+        setMessage("Error creating student. Please try again!",err.message  );
+        setOpen(true);
+        setIsConfirmationNeeded(false); 
+      },
+    });
+   
+  };
+  
+  // Pass handleFinalSubmit to ConfirmationModal as a prop
+  {isConfirmationNeeded && (
+    <ConfirmationModal formData={form} onConfirm={handleFinalSubmit} />
+  )}
+  
+//Form Collection Logic
   const handleChange = (e) => {
     setForm({
       ...form,
       [e.target.name]: e.target.value,
     });
-    // console.log(form);
+  
   };
 
   const handleClose = (event, reason) => {
@@ -285,20 +276,7 @@ export default function StudentForm() {
                 Class
               </label>
               <div className="mt-2 sm:col-span-2 sm:mt-0">
-                {/* <select
-                  value={selectedClass?._id}
-                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:max-w-xs sm:text-sm sm:leading-6"
-                  onChange={handleClassChange}
-                >
-                  <option value="" disabled>
-                    Select a class
-                  </option>
-                  {classes.map((classItem, index) => (
-                    <option key={index} value={classItem._id}>
-                      {classItem.ClassName}
-                    </option>
-                  ))}
-                </select> */}
+          
                 <select
                   value={selectedClassIndex || ""}
                   className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:max-w-xs sm:text-sm sm:leading-6"
@@ -484,12 +462,14 @@ export default function StudentForm() {
       <Snackbar open={open} autoHideDuration={6000} onClose={handleClose}>
         <Alert
           onClose={handleClose}
-          // severity={createStudentMutation.isSuccess ? "success" : "error"}
+           severity={studentMutation.isSuccess ? "success" : "error"}
         >
-          {/* {message} */}
+          {message}
         </Alert>
       </Snackbar>
-      <ReviewStudent />
+      {isConfirmationNeeded && (
+  <ConfirmationModal formData={form} onConfirm={handleFinalSubmit} show={true} />
+)}
       <div className="mt-6 flex items-center justify-end gap-x-6">
         <button
           type="button"
