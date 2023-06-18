@@ -273,3 +273,144 @@ useEffect(() => {
 ```
 
 With this setup, the modal can now open and close correctly and always has the correct data for the currently selected person.
+
+Sure, let's start creating a well-formatted markdown guide.
+
+# Implementing Dynamic Profile Page with Next.js and Fetching Data from API
+
+## Overview
+
+This guide will take you through creating a dynamic profile page in a Next.js application. It includes fetching data from an API and passing props to components. 
+
+## Step 1: Fetching Data from API
+
+To fetch data from an API, we'll use the built-in `fetch()` function provided by JavaScript. 
+
+In your file where you want to fetch the data (likely your Next.js page file), use a React hook called `useEffect` to call `fetch()`.
+
+Here is an example of fetching data:
+
+```jsx
+import React, { useEffect, useState } from 'react';
+
+const MyComponent = () => {
+  const [data, setData] = useState([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const response = await fetch('API_ENDPOINT'); // replace with your endpoint
+      const jsonData = await response.json();
+      setData(jsonData);
+    };
+
+    fetchData();
+  }, []);
+
+  return (
+    // Rest of your component
+  );
+};
+
+export default MyComponent;
+```
+
+In the above example, `API_ENDPOINT` should be replaced with the URL of your API endpoint.
+
+## Step 2: Creating a Dynamic Route
+
+Next.js allows you to create dynamic routes, which are routes that can change based on data. 
+
+To create a dynamic route, you'll need to create a new page in your `pages` directory with the filename wrapped in square brackets. For example, if you're creating dynamic routes for profiles, you would name your file `[profile].js`.
+
+Inside your new page file, you'll use Next.js's `useRouter` hook to access the dynamic portion of the route.
+
+Here's a basic example of a dynamic page:
+
+```jsx
+import { useRouter } from 'next/router';
+
+const ProfilePage = () => {
+  const router = useRouter();
+  const { profile } = router.query;
+
+  return (
+    // Render your component here
+  );
+};
+
+export default ProfilePage;
+```
+
+In this example, `profile` will be the dynamic portion of the route. For example, if you navigate to `/profile/john`, `profile` will be `'john'`.
+
+## Step 3: Fetching Data Based on the Dynamic Route
+
+You can use the value of your dynamic route to fetch data specific to that route. For example, if you're fetching profile data, you might want to fetch data for the profile that matches the dynamic route.
+
+Here's how you might do that:
+
+```jsx
+import { useRouter } from 'next/router';
+import { useEffect, useState } from 'react';
+
+const ProfilePage = () => {
+  const router = useRouter();
+  const { profile } = router.query;
+  const [profileData, setProfileData] = useState(null);
+
+  useEffect(() => {
+    if (profile) {
+      const fetchData = async () => {
+        const response = await fetch(`API_ENDPOINT/profile/${profile}`);
+        const jsonData = await response.json();
+        setProfileData(jsonData);
+      };
+
+      fetchData();
+    }
+  }, [profile]);
+
+  return (
+    // Render your component here
+  );
+};
+
+export default ProfilePage;
+```
+
+In this example, we're fetching profile data based on the dynamic `profile` route. 
+
+## Step 4: Passing Data to Components
+
+Once you've fetched your data, you can pass it to other components via props.
+
+Here's an example of passing `profileData` to a `Profile` component:
+
+```jsx
+// Inside your ProfilePage component
+
+return (
+  profileData ? <Profile data={profileData} /> : <p>Loading...</p>
+);
+```
+
+In this example
+
+, we're conditionally rendering the `Profile` component. If `profileData` exists, we render `Profile` and pass `profileData` to it via a prop named `data`. If `profileData` doesn't exist (meaning it's either `null` or `undefined`), we render a loading message instead.
+
+Inside your `Profile` component, you can access `profileData` via `props.data`.
+
+```jsx
+const Profile = (props) => {
+  return (
+    <div>
+      <h1>{props.data.name}</h1>
+      <p>{props.data.description}</p>
+    </div>
+  );
+};
+```
+
+In this example, `props.data` will be the `profileData` you fetched in your `ProfilePage` component.
+
+Remember to adjust the code to fit the exact structure and requirements of your project. This markdown file provides general steps to follow for this particular scenario.

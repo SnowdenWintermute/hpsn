@@ -3,14 +3,11 @@ import Divider from "../../components/Divider/BottomD";
 import RemoveCircleOutlineSharpIcon from "@mui/icons-material/RemoveCircleOutlineSharp";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState, useRef } from "react";
-import {
-  BarsArrowUpIcon,
-  ChevronDownIcon,
-  MagnifyingGlassIcon,
-} from "@heroicons/react/20/solid";
+import { MagnifyingGlassIcon } from "@heroicons/react/20/solid";
 import useFetchTeachers from "../../hooks/useFetchTeachers";
 import useFetchEmployees from "../../hooks/useFetchEmployees";
-import { useDeactivateTeacher } from "../../hooks/useDeactivateTeacher";
+import { useActivateEmployee } from "../../hooks/useActivateEmployee";
+import { useDeactivateTeacher } from "../../hooks/useDeactivateStatus";
 import { Popover } from "@headlessui/react";
 
 export default function TeacherSec() {
@@ -31,8 +28,9 @@ export default function TeacherSec() {
 
     let filteredTeachers = [...fetchData.employee];
 
-   if(!loadingEmployees && !isErrorEmployees){ return filteredTeachers;}
-   
+    if (!loadingEmployees && !isErrorEmployees) {
+      return filteredTeachers;
+    }
   }, [fetchData, genderFilter, designationFilter, sortPayOrder]);
 
   const employees = useMemo(() => {
@@ -42,7 +40,7 @@ export default function TeacherSec() {
 
     return filteredEmployees;
   }, [fetchEmployees]);
-  console.log(employees);
+
   return (
     <div>
       <div className="border-b mt-5 border-gray-200 pb-5 sm:flex sm:items-center sm:justify-between">
@@ -157,6 +155,7 @@ const List = ({ teachers, refetchTeachers }) => {
   const [currentPerson, setCurrentPerson] = useState(null);
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState("");
+
   const updateStatusMutation = useDeactivateTeacher();
 
   console.log(currentPerson);
@@ -174,7 +173,10 @@ const List = ({ teachers, refetchTeachers }) => {
       {
         onSuccess: () => {
           setOpen(true);
-          queryClient.invalidateQueries('teachers');
+          setTimeout(() => {
+            setOpen(false);
+          }, 3000);
+          queryClient.invalidateQueries("teachers");
           setMessage("Teacher Deactivated  successfully!");
           refetchTeachers();
         },
@@ -184,6 +186,12 @@ const List = ({ teachers, refetchTeachers }) => {
   const handleCloseModal = () => {
     setIsModalOpen(false);
   };
+  const handleClose2 = (event, reason) => {
+    if (reason === "clickaway") {
+      return;
+    }
+    setOpen(false);
+  };
 
   const DeactivateButton = ({ person }) => {
     return (
@@ -191,7 +199,11 @@ const List = ({ teachers, refetchTeachers }) => {
         {({ open }) => (
           <>
             <Popover.Button className="text-orange-500 hover:text-orange-400 border-transparent focus:border-transparent focus:ring-0 border-0 ">
-              {person.status.isActive ? "Deactivate" :  <RemoveCircleOutlineSharpIcon  />}
+              {person.status.isActive ? (
+                "Deactivate"
+              ) : (
+                <RemoveCircleOutlineSharpIcon />
+              )}
             </Popover.Button>
 
             <Popover.Panel
@@ -266,9 +278,9 @@ const List = ({ teachers, refetchTeachers }) => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {teachers?.map((person) => (
+                {teachers?.map((person, index) => (
                   <tr
-                    key={person.first_name}
+                    key={index}
                     // className={
                     //   person.status.isActive ? "" : "bg-red-200"
                     // }
@@ -335,7 +347,7 @@ const List = ({ teachers, refetchTeachers }) => {
           onClose={handleCloseModal}
         >
           <Alert
-            onClose={handleCloseModal}
+            onClose={handleClose2}
             severity={updateStatusMutation.isSuccess ? "success" : "error"}
           >
             {message}
@@ -346,31 +358,31 @@ const List = ({ teachers, refetchTeachers }) => {
   );
 };
 
-
 const NonTeachingList = ({ employees, refetchEmployees }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentPerson, setCurrentPerson] = useState(null);
   const [open, setOpen] = useState(false);
+
   const [message, setMessage] = useState("");
   const updateStatusMutation = useDeactivateTeacher();
 
-  console.log(currentPerson);
   const handleOpenModal = (person) => {
     setCurrentPerson(person);
     setIsModalOpen(true);
   };
-  // const handleDeactivate = (personId, comment) => {
-  //   updateStatusMutation.mutate({ id: personId, comment });
-  // };
-const queryClient = useQueryClient();
+
+  const queryClient = useQueryClient();
   const handleDeactivate = (personId, comment) => {
     updateStatusMutation.mutate(
       { id: personId, comment },
       {
         onSuccess: () => {
           setOpen(true);
-          queryClient.invalidateQueries('employees');
-          setMessage("Employee deactivated successfully!");
+          queryClient.invalidateQueries("employees");
+          setTimeout(() => {
+            setOpen(false);
+          }, 3000);
+          setMessage("Employee DEACTIVATED");
           refetchEmployees();
         },
       }
@@ -379,27 +391,37 @@ const queryClient = useQueryClient();
   const handleCloseModal = () => {
     setIsModalOpen(false);
   };
-
+  const [openReactivate, setOpenReactivate] = useState(false);
+  const [messageReactivate, setMessageReactivate] = useState("");
   const DeactivateButton = ({ person }) => {
-  
-  
+    const reactivateEmployeeMutation = useActivateEmployee();
+    const handleReactivate = (personId, comment) => {
+      reactivateEmployeeMutation.mutate(
+        { id: personId, comment },
+        {
+          onSuccess: () => {
+            setOpenReactivate(true);
+            setMessageReactivate("Employee REACTIVATED successfully!");
+
+            refetchEmployees();
+          },
+        }
+      );
+    };
+
     return (
       <Popover className="relative ">
         {({ open }) => (
           <>
-            <Popover.Button
-        
-              className="text-orange-500 hover:text-orange-400 border-transparent focus:border-transparent focus:ring-0 border-0 "
-            >
+            <Popover.Button className="text-orange-500 hover:text-orange-400 border-transparent focus:border-transparent focus:ring-0 border-0 ">
               {person.status.isActive ? (
                 "Deactivate"
               ) : (
-                <RemoveCircleOutlineSharpIcon  />
+                <RemoveCircleOutlineSharpIcon />
               )}
             </Popover.Button>
 
             <Popover.Panel
-             
               className={`${
                 open
                   ? "flex flex-col items-center justify-center  text-gray-50  p-2 m-2 rounded-md text-xs"
@@ -411,26 +433,50 @@ const queryClient = useQueryClient();
                className="p-2 font-roboto tracking-widest">
                 {person.status.comments}
               </div> */}
-              <div  >
+              <div>
                 {!person.status.isActive && (
                   <button
-               
-                
-                    onClick={() => handleReactivate(person._id)}
+                    onClick={() =>
+                      handleReactivate(person._id, "Reactivated by user")
+                    }
                     className="p-2 font-roboto tracking-widest relative bottom-20 rounded-md right-20 bg-gray-500  hover:bg-blue-500 hover:text-white hover:rounded-md"
                   >
                     Reactivate
                   </button>
                 )}
               </div>
-             
-               
-              
             </Popover.Panel>
+            <Snackbar
+              open={openReactivate}
+              autoHideDuration={6000}
+              onClose={handleClose}
+            >
+              <Alert
+                onClose={handleClose}
+                severity={
+                  reactivateEmployeeMutation.isSuccess ? "success" : "error"
+                }
+              >
+                {messageReactivate}
+              </Alert>
+            </Snackbar>
           </>
         )}
       </Popover>
     );
+  };
+
+  const handleClose = (event, reason) => {
+    if (reason === "clickaway") {
+      return;
+    }
+    setOpenReactivate(false);
+  };
+  const handleClose2 = (event, reason) => {
+    if (reason === "clickaway") {
+      return;
+    }
+    setOpen(false);
   };
 
   return (
@@ -478,9 +524,9 @@ const queryClient = useQueryClient();
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {employees?.map((person) => (
+                {employees?.map((person, index) => (
                   <tr
-                    key={person.first_name}
+                    key={index}
                     // className={
                     //   person.status.isActive ? "" : "bg-red-200"
                     // }
@@ -517,7 +563,7 @@ const queryClient = useQueryClient();
                           Edit<span className="sr-only">, {person.name}</span>
                         </button>
                       ) : (
-                        <DeactivateButton person={person}  />
+                        <DeactivateButton person={person} />
                       )}
                       {/* <button
                         onClick={() => handleOpenModal(person)}
@@ -529,6 +575,20 @@ const queryClient = useQueryClient();
                   </tr>
                 ))}
               </tbody>
+              <Snackbar
+                open={open}
+                autoHideDuration={6000}
+                onClose={handleCloseModal}
+              >
+                <Alert
+                  onClose={handleClose2}
+                  severity={
+                    updateStatusMutation.isSuccess ? "success" : "error"
+                  }
+                >
+                  {message}
+                </Alert>
+              </Snackbar>
             </table>
           </div>
 
@@ -541,20 +601,7 @@ const queryClient = useQueryClient();
             />
           )}
         </div>
-        <Snackbar
-          open={open}
-          autoHideDuration={6000}
-          onClose={handleCloseModal}
-        >
-          <Alert
-            onClose={handleCloseModal}
-            severity={updateStatusMutation.isSuccess ? "success" : "error"}
-          >
-            {message}
-          </Alert>
-        </Snackbar>
       </div>
-      <Divider />
     </div>
   );
 };

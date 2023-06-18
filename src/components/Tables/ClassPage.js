@@ -3,13 +3,14 @@ import useFetchStudentsByClass from "../../hooks/useFetchStudentsByClass";
 import EditNoteSharpIcon from "@mui/icons-material/EditNoteSharp";
 import React, { useState, useEffect, useMemo } from "react";
 import AccountBoxSharpIcon from "@mui/icons-material/AccountBoxSharp";
-import BreadCrumbs from "../../components/BreadCrumbs/BreadCrumbs";
-import ModalD from "../../components/Modals/DeactivationModal";
-import {
-  BarsArrowUpIcon,
-  ChevronDownIcon,
-  MagnifyingGlassIcon,
-} from "@heroicons/react/20/solid";
+import { useDeactivateStudent } from "../../hooks/useDeactivateStatus";
+import useGetStudent from "../../hooks/useGetStudent";
+import ModalD from "../Modals/DeactivationModal";
+import { MagnifyingGlassIcon } from "@heroicons/react/20/solid";
+import ActionPanel from "../CommandPallet/ActionPanel";
+import { Snackbar, Alert } from "@mui/material";
+
+import { useRouter } from 'next/router'; 
 
 export default function ClassPage() {
   const [classes, setClasses] = useState([]);
@@ -18,22 +19,46 @@ export default function ClassPage() {
   const [classID, setClassID] = useState(null);
   const [students, setStudents] = useState([]);
   const [filteredStudents, setFilteredStudents] = useState([]);
+  const [isOpen, setIsOpen] = useState(false);
+  const [currentPerson, setCurrentPerson] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [message, setMessage] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+
+
+  // const studentDataQuery = useGetStudent(currentPerson?._id);
+  // useEffect(() => {
+   
+  //   if(studentDataQuery.isSuccess) {
+  //     console.log(studentDataQuery.data);
+      
+  //   }
+   
+  // }, [studentDataQuery]);
+  const router = useRouter(); // use the router hook
+
 
   const {
     data: fetchedClasses,
     isLoading: isClassesLoading,
     error: classesError,
   } = useFetchClasses();
+
   const {
     data: fetchedStudents,
     isLoading: isStudentsLoading,
     error: studentsError,
   } = useFetchStudentsByClass(classID);
+
+  const updateStatusMutation = useDeactivateStudent();
+
   useEffect(() => {
     if (!isClassesLoading && !classesError) {
       setClasses(fetchedClasses);
     }
   }, [classes, isClassesLoading, classesError]);
+
   useEffect(() => {
     const classMap = classes.reduce((map, cls) => {
       map[cls._id] = cls.ClassName;
@@ -44,18 +69,20 @@ export default function ClassPage() {
       const sClassNames = fetchedStudents.map((student) => {
         return { ...student, ClassName: classMap[student.ClassID] || "N/A" };
       });
+      setIsOpen(true);
       setStudents(sClassNames);
       setFilteredStudents(sClassNames);
     }
   }, [fetchedStudents, isStudentsLoading, studentsError]);
-
+  console.log(filteredStudents);
   const handleClassChange = (e) => {
     const index = e.target.value;
     const selectedClassItem = classes[index];
     setClassID(selectedClassItem._id);
     setSelectedClassIndex(index);
-    setSelectedSection(""); // This will clear the selected section state when a new class is selected
+    setSelectedSection("");
   };
+  console.log(classes[selectedClassIndex]?.ClassName);
 
   const handleSectionChange = (e) => {
     setSelectedSection(e.target.value);
@@ -80,12 +107,49 @@ export default function ClassPage() {
     return sections;
   }, [students]);
 
-  //Modal logic
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentPerson, setCurrentPerson] = useState(null);
+  const handleDeactivate = (personId, comment) => {
+    updateStatusMutation.mutate(
+      { id: personId, comment },
+      {
+        onSuccess: () => {
+          setOpen(true);
+          queryClient.invalidateQueries(["students", classID]);
+          setTimeout(() => {
+            setOpen(false);
+          }, 3000);
+          setMessage(
+            `Successfully deactivated ${personId.first_name} ${personId.last_name}`
+          );
+          refetchEmployees();
+        },
+      }
+    );
+  };
+
+  const handleOpenModal = (person) => {
+    setCurrentPerson(person);
+    setIsModalOpen(true);
+  };
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+  };
+  const handleCloseAlert = (event, reason) => {
+    if (reason === "clickaway") {
+      return;
+    }
+    setOpen(false);
+  };
+
+  const handleGetProfile = (person) => {
+   // setCurrentPerson(person);
+   // const handleGetProfile = (person) => {
+      // navigate to the profile page for this student
+      router.push(`/profile/${person._id}`);
+  };
+  
 
   return (
-    <div className="px-4 pt-3   sm:px-6 lg:px-8">
+    <div className="px-4 pt-3 bg-gray-50   sm:px-6 lg:px-8">
       <div className="sm:flex border-b pb-5 pt-3 sm:items-center">
         <div className="sm:flex-auto">
           <h3 className="text-3xl tracking-widest font-semibold leading-6 text-gray-600">
@@ -126,98 +190,34 @@ export default function ClassPage() {
               />
             </div>
 
-            <select className="bg-transparent text-gray-500 text-sm border-transparent focus:border-transparent focus:ring-0 border-0 w-fit"
-            value={selectedClassIndex || ""}
-            onChange={handleClassChange}>
-            {classes.map((classItem, index) => (
-                  <option key={index} value={index}>
-                    {classItem.ClassName}
-                  </option>
-                ))}
+            <select
+              className="bg-transparent text-gray-500 text-sm border-transparent focus:border-transparent focus:ring-0 border-0 w-fit"
+              value={selectedClassIndex || ""}
+              onChange={handleClassChange}
+            >
+              {classes.map((classItem, index) => (
+                <option key={index} value={index}>
+                  {classItem.ClassName}
+                </option>
+              ))}
             </select>
-            <select className="bg-transparent  text-gray-500 text-sm focus-outline-none border-transparent focus:border-transparent focus:ring-0 border-0 w-fit"
-            value={selectedSection}
-            onChange={handleSectionChange}>
-            <option
-                 
-                 value=""
-                 disabled
-               >
-                 Section
-               </option>
-               {classes[selectedClassIndex]?.Section?.map((section, index) => (
-                 <option key={index} value={section}>
-                   {section}
-                 </option>
-               ))}
+            <select
+              className="bg-transparent  text-gray-500 text-sm focus-outline-none border-transparent focus:border-transparent focus:ring-0 border-0 w-fit"
+              value={selectedSection}
+              onChange={handleSectionChange}
+            >
+              <option value="" disabled>
+                Section
+              </option>
+              {classes[selectedClassIndex]?.Section?.map((section, index) => (
+                <option key={index} value={section}>
+                  {section}
+                </option>
+              ))}
             </select>
           </div>
         </div>
-          {/* <div className="relative flex ring-2 focus-within:z-10">
-            <div className="pointer-events-none  absolute inset-y-0 left-0 flex text-sm items-center pl-3">
-              <MagnifyingGlassIcon
-                className="h-5 w-5 text-gray-400"
-                aria-hidden="true"
-              />
-            </div>
-            <input
-                type="text"
-                name="mobile-search-candidate"
-                id="mobile-search-candidate"
-                className="block w-full rounded-none rounded-l-md border-0 py-1.5 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:hidden"
-                placeholder="Search"
-              />
-              <input
-                type="text"
-                name="desktop-search-candidate"
-                id="desktop-search-candidate"
-                className="hidden w-full rounded-none rounded-l-md border-0 py-1.5 pl-10 text-sm leading-6 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:block"
-                placeholder="Search Students"
-              />
-
-           
-             <select
-                className="bg-transparent text-gray-500 text-sm border-transparent focus:border-transparent focus:ring-0 border-0 w-fit"
-                value={selectedClassIndex || ""}
-                 onChange={handleClassChange}
-              >
-                <option
-                  className="absolute z-10 mt-1 max-h-60 w-full overflow-auto  py-1 text-base shadow-lg  ring-opacity-1  focus:outline-none sm:text-sm"
-                  value=""
-                  disabled
-                >
-                  class
-                </option>
-                {classes.map((classItem, index) => (
-                  <option key={index} value={index}>
-                    {classItem.ClassName}
-                  </option>
-                ))}
-              </select>
-           
-            <div className="relative w-3/4 flex-grow-0 -ml-px inline-flex rounded-r-md items-center gap-x-1.5 px-3 py-2 text-sm font-semibold text-gray-900 ring-1   ring-inset ring-gray-300">
-              <select
-                value={selectedSection}
-                className="bg-transparent text-gray-500 text-sm border-transparent focus:border-transparent focus:ring-0 border-0 w-fit" onChange={handleSectionChange}
-              >
-                <option
-                 
-                  value=""
-                  disabled
-                >
-                  Section
-                </option>
-                {classes[selectedClassIndex]?.Section?.map((section, index) => (
-                  <option key={index} value={section}>
-                    {section}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div> */}
-        
       </div>
-      {/* <BreadCrumbs /> */}
 
       <div className="mt-8 flow-root transition-all ">
         <div className="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
@@ -282,13 +282,22 @@ export default function ClassPage() {
                       {student.Section}
                     </td>
                     <td className="relative flex justify-around whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 lg:pr-8">
-                      <a
-                        href="#"
-                        className="text-indigo-600 hover:text-indigo-900"
-                      >
-                        <EditNoteSharpIcon />
-                        <span className="sr-only">, {student.name}</span>
-                      </a>
+                      {student.status.isActive ? (
+                        <button
+                          onClick={() => handleOpenModal(student)}
+                          className="text-gray-500 hover:text-gray-600 "
+                        >
+                          Edit<span className="sr-only">, {student.Name}</span>
+                        </button>
+                      ) : (
+                        <a
+                          href="#"
+                          className="text-indigo-600 hover:text-indigo-900"
+                        >
+                          <EditNoteSharpIcon />
+                          <span className="sr-only">, {student.name}</span>
+                        </a>
+                      )}
                       <a
                         href="#"
                         className="text-indigo-600 hover:text-indigo-900"
@@ -296,12 +305,38 @@ export default function ClassPage() {
                         <AccountBoxSharpIcon />
                         <span className="sr-only">, {student.name}</span>
                       </a>
+                    
+                        <button
+                          onClick={() => handleGetProfile(student)}>
+                         +
+                          </button>
+                      
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            {isModalOpen && currentPerson && (
+              <ModalD
+                isOpen={isModalOpen}
+                onClose={handleCloseModal}
+                person={currentPerson}
+                onDeactivate={handleDeactivate} // Passing the function as a prop
+              />
+            )}
           </div>
+          <Snackbar
+            open={open}
+            autoHideDuration={6000}
+            onClose={handleCloseModal}
+          >
+            <Alert
+              onClose={handleCloseAlert}
+              severity={updateStatusMutation.isSuccess ? "success" : "error"}
+            >
+              {message}
+            </Alert>
+          </Snackbar>
         </div>
       </div>
     </div>

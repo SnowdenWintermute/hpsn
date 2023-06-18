@@ -13,7 +13,7 @@ export default function ConfirmationModal({ formData, onConfirm,show }) {
 
 
   return (
-    <Transition.Root show={open} as={Fragment}>
+    <Transition.Root  show={open} as={Fragment}>
       <Dialog
         as="div"
         className="relative z-10"
@@ -67,32 +67,32 @@ export default function ConfirmationModal({ formData, onConfirm,show }) {
                         </p>
 
                           <p className="text-sm text-left ml-2 font-extralight text-gray-500">
-                            Name: {formData.Name}
+                            Name: {formData?.Name}
                           </p>
 
                           <p className="text-sm text-left ml-2  font-extralight text-gray-500">
-                            Gender:{formData.Gender}
+                            Gender:{formData?.Gender}
                           </p>
                           <p className="text-sm text-left ml-2  font-extralight text-gray-500">
-                            Date of Birth:{formData.DOB}
+                            Date of Birth:{formData?.DOB}
                           </p>
                           <p className="mt-2 text-sm text-left text-gray-600">
                           Guardian Details:
                         </p>
                           <p className="text-sm text-left ml-2  font-extralight text-gray-500">
-                            Name:{formData.Father_Name}
+                            Name:{formData?.Father_Name}
                           </p>
                           <p className="text-sm text-left ml-2  font-extralight text-gray-500">
-                            CNIC:{formData.Father_ID}
+                            CNIC:{formData?.Father_ID}
                           </p>
                           <p className="text-sm text-left ml-2  font-extralight text-gray-500">
-                            Occupation:{formData.Father_Occupation}
+                            Occupation:{formData?.Father_Occupation}
                           </p>
                           <p className="text-sm text-left ml-2 mt-1 font-extralight text-gray-500">
-                            Address:{formData.Address}
+                            Address:{formData?.Address}
                           </p>
                           <p className="text-sm text-left ml-2  font-extralight text-gray-500">
-                            Phone Number:{formData.Phone_No}
+                            Phone Number:{formData?.Phone_No}
                           </p>
                           </div>
                          {/* second grid */}
@@ -104,7 +104,7 @@ export default function ConfirmationModal({ formData, onConfirm,show }) {
                             Class:{" "}
                           </p>
                           <p className="text-sm text-left ml-2 font-extralight text-gray-500">
-                            Section:{formData.Section}
+                            Section:{formData?.Section}
                           </p>
                           <p className="mt-2 text-sm text-left text-gray-600">
                           For the Session:

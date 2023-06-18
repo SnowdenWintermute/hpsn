@@ -40,7 +40,8 @@ export default function ModalD({ isOpen, onClose, onDeactivate, person }) {
   };
 
   const handleDeactivate = () => {
-    if (comment) { // Ensure comment exists before attempting to deactivate
+    if (comment) {
+      // Ensure comment exists before attempting to deactivate
       onDeactivate(person._id, comment);
       onClose();
     } else {
@@ -97,7 +98,10 @@ export default function ModalD({ isOpen, onClose, onDeactivate, person }) {
                       </Dialog.Title>
                       <div>
                         <p className="mt-2 text-sm text-gray-500">
-                          Name: {currentPerson ? currentPerson.first_name : ""}{" "}
+                          Name:{" "}
+                          {currentPerson
+                            ? currentPerson.first_name || currentPerson.Name
+                            : ""}{" "}
                           {currentPerson ? currentPerson.last_name : ""}
                         </p>
                       </div>

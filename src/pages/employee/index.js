@@ -3,12 +3,13 @@ import RegistrationForm from "../../components/Forms/NonTeachingStaff";
 import React from "react";
 
 import CopyRight from "../../components/Footer/CopyRight";
-
+import EmployeeTable from "../../components/Tables/EmployeeTable"
 const Employees = () => {
   return (
     <div>
       <DashboardLayout>
-        <RegistrationForm />
+        {/* <RegistrationForm /> */}
+        <EmployeeTable />
         <CopyRight />
       </DashboardLayout>
     </div>

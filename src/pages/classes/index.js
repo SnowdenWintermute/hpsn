@@ -1,13 +1,13 @@
 import React from "react";
-import ClassPage from "./ClassPage";
+import ClassPage from "../../components/Tables/ClassPage";
 import BreadCrumbs from "../../components/BreadCrumbs/BreadCrumbs";
 import DashboardLayout from "../../components/Dashboard/DashboardLayout";
-import CopyRight from "../..//components//Footer//CopyRight";
+import CopyRight from "../../components//Footer//CopyRight";
 const Classes = () => {
   return (
     <DashboardLayout>
       <ClassPage />
-     <CopyRight/>
+      <CopyRight />
     </DashboardLayout>
   );
 };

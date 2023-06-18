@@ -5,8 +5,8 @@ import Main from "./page";
 export default function HomePage() {
   return (
     <DashboardLayout>
-      <Main /> 
-      <div style={style.div}>
+  {/*      <Main /> */}
+   <div style={style.div}>
       <div style={{display:'grid',gridTemplateColumns:'repeat(1,1fr)',gap:'1rem'}} className="w-1/2 ">
       
       <div style={style.div} className="bg-blue-600 flex shadow-black shadow-md hover:bg-blue-500">
